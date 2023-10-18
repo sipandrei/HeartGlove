@@ -1,0 +1,73 @@
+oldX,oldY,oldZ
+apasare = false
+marjaAcc = 2 //nr pozitiv
+ultimaDist
+apasari = 0
+functie verificareApasare(accX, accY, accZ)
+{
+  daca abs(accX-oldX) < marjaAcc si abs(accY-oldY) < marjaAcc //pentru a verifica faptul ca miscarile sunt pe verticala
+  {
+    daca accZ - oldZ > marjaAcc
+      apasare = true
+  }
+  durata = 0
+  sumAcc = 0
+  cat timp apasare = true{
+    durata++
+    sumAcc += oldZ
+    citireAcc(accX,accY,accZ)
+    daca accZ-oldZ < -marjaAcc
+    {
+      apasari++
+      apasare = false
+      accMedie = sumAcc/durata
+      durata = 1e-3*durata //schimb din ms in s
+      ultimaDist = 0 * durata + 1/2*accMedie*durata^2
+      ultimaDurata = durata
+    }
+    delay(1ms)
+  }
+}
+
+functie citireAcc(accX,accY,accZ){
+  oldX = accX
+  oldY = accY
+  oldZ = accZ
+  accX = accCititaX
+  accY = accCititaY
+  accZ = accCititaZ
+}
+
+functie masterBatai{
+  if(apasari < 30){
+    citireAcc(accX,accY,accZ)
+    verificareApasare(accX,accY,accZ)
+    verificareMarje(ultimaDist, 0.035, 0.055)
+    verificareMarje(ultimaDurata*60, 95, 105)
+    //dat alerte in functie de verificareMarje
+
+  }
+}
+
+functie verificareMarje(contor, marjaJos, marjaSus){
+  if(contor < marjaJos)
+    return maiMult - 1
+  else if(contor > marjaSus)
+    return maiPutin - -1
+  else
+    return ok - 0
+}
+
+functie rasuflari(){
+  afisare indicatii
+  confirmare 2 rasuflari
+}
+
+functie main{
+  dateVictima()
+  prezentareProcedura()
+  cat timp (!semnalStop){
+    masterBatai()
+    rasuflari();
+  }
+}
