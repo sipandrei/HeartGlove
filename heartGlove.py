@@ -1,9 +1,21 @@
 #presupunem accelerometru ADXL345
-
+#folosim libraria adafruit_adxl34x
+#folosim picovoice pentru speech recognition https://www.picovoice.ai
+import os
 import time
 import board
 import busio
 import adafruit_adxl34x
+import pvrhino
+import pvrecorder
+
+devices = PvRecorder.get_available_devices()
+
+recorder = PvRecorder(frame_length=512, device_index = 0)
+recorder.start()
+ACCES_KEY = os.environ.get("ACCESS_KEY", ".env")
+CONTEXT_PATH = os.environ.get("CONTEXT_PATH", ".env")
+rhino = pvrhino.create(access_key='${ACCESS_KEY}',context_path='${CONTEXT_PATH}')
 
 i2c = busio.I2C(board.SCL, board.SDA)
 accelerometru = adafruit_adxl34x.ADXL345(i2c)
@@ -23,6 +35,19 @@ ultimaDist = 0
 ultimaDurata = 0
 apasari = 0
 apasare = False
+
+def get_next_audio_frame():
+  return recorder.read()
+
+def sti():
+  audio_frame = get_next_audio_frame()
+  is_finalized = rhino.process(audio_frame)
+  if is_finalized:
+    inference = rhino.get_inference()
+    if inference.is_understood():
+      intent = inference.intent
+      slots = inference.slots
+  return intent
 
 def verificareApasare(accX, accY, accZ):
   if abs(accx - oldX) < marjaAcc and abs(accY - oldY) < marjaAcc:
@@ -67,6 +92,7 @@ def masterApasari():
   if apasari < 30:
     citireAcc(nowX, nowY, nowZ)
     verificareApasare(nowX, nowY, nowZ)
+    # de modificat marje in functie de adult,copil, bebelus https://www.cpracademylv.com/infant-cpr-certification/
     match verificareMarje(ultimaDist, distJos, distSus):
       case -1:
         smartPrint("Apasa mai profund!")
@@ -84,7 +110,11 @@ def masterApasari():
         smartPrint("Apasare OK")
 
 def dateVictima():
-  print("waiting for voice recognition")
+  while not intent:
+    intent = sti()
+  if intent == "adultVictim" or intent == "childVictim" or intent == "babyVictim":
+    return intent
+  return 0
 
 def prezentareProcedura():
   print("to implement screen")
@@ -92,8 +122,21 @@ def prezentareProcedura():
 def semnalStop():
   return False
 
-dateVictima()
+def ajustareMarje(tipVictima):
+  match tipVictima:
+    case "childVictim":
+      distJos = 4.5
+      distSus = 5.5
+      break
+    case "babyVictim":
+      distJos = 3.3
+      distSus = 4.3
+      break
+
+victima = dateVictima()
+ajustareMarje(victima)
 prezentareProcedura()
-while semnalStop():
+while not semnalStop():
   masterApasari()
   rasuflari()
+rhino.delete()
