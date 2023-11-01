@@ -36,6 +36,14 @@ ultimaDurata = 0
 apasari = 0
 apasare = False
 
+class FunctiiProcedura:
+  def constienta():
+    smartPrint("se verifica starea de constienta a victimei")
+  def caiAeriene():
+    smartPrint("se verifica starea cailor aeriene")
+  def verificareRespiratie():
+    smartPrint("se verifica respiratia")
+
 def get_next_audio_frame():
   return recorder.read()
 
@@ -88,6 +96,10 @@ def verificareMarje(contor, marjaJos, marjaSus):
 def smartPrint(mesaj):
   print(mesaj)
 
+def rasuflari():
+  smartPrint("2 respiratii")
+  time.sleep(1)
+
 def masterApasari():
   if apasari < 30:
     citireAcc(nowX, nowY, nowZ)
@@ -110,16 +122,28 @@ def masterApasari():
         smartPrint("Apasare OK")
 
 def dateVictima():
-  while not intent:
-    intent = sti()
+  intent = sti()
   if intent == "adultVictim" or intent == "childVictim" or intent == "babyVictim":
     return intent
-  return 0
+  return ""
 
 def prezentareProcedura():
   print("to implement screen")
+  FunctiiProcedura.constienta()
+  FunctiiProcedura.caiAeriene()
+  FunctiiProcedura.verificareRespiratie()
+
 
 def semnalStop():
+  intent = sti()
+  if intent == "finish":
+    return True
+  return False
+
+def continuare():
+  intent = sti()
+  if intent == "stepDone":
+    return True
   return False
 
 def ajustareMarje(tipVictima):
@@ -133,8 +157,14 @@ def ajustareMarje(tipVictima):
       distSus = 4.3
       break
 
-victima = dateVictima()
-ajustareMarje(victima)
+def initialSetup():
+  victima = ""
+  while victima == "":
+    smartPrint("Victim Data")
+    victima = dateVictima()
+    ajustareMarje(victima)
+
+initialSetup()
 prezentareProcedura()
 while not semnalStop():
   masterApasari()
