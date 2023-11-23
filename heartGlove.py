@@ -1,3 +1,4 @@
+
 #presupunem accelerometru ADXL345
 #folosim libraria adafruit_adxl34x
 #folosim picovoice pentru speech recognition https://www.picovoice.ai
@@ -7,15 +8,41 @@ import board
 import busio
 import adafruit_adxl34x
 import pvrhino
-import pvrecorder
+from pvrecorder import PvRecorder
+import env
 
 # Variabile pentru input audio și Picovoice
 devices = PvRecorder.get_available_devices()
 recorder = PvRecorder(frame_length=512, device_index = 0)
 recorder.start()
-ACCES_KEY = os.environ.get("ACCESS_KEY", ".env")
-CONTEXT_PATH = os.environ.get("CONTEXT_PATH", ".env")
-rhino = pvrhino.create(access_key='${ACCESS_KEY}',context_path='${CONTEXT_PATH}')
+ACCESS_KEY = f"{env.access_key}"
+CONTEXT_PATH = f"{env.context_path}"
+print(f'{ACCESS_KEY}')
+print(CONTEXT_PATH)
+
+try:
+	rhino = pvrhino.create(
+        access_key=ACCESS_KEY,
+        context_path=CONTEXT_PATH)
+except pvrhino.RhinoInvalidArgumentError as e:
+        print("One or more arguments provided to Rhino is invalid: ", args)
+        print(e)
+        raise e
+except pvrhino.RhinoActivationError as e:
+        print("AccessKey activation error")
+        raise e
+except pvrhino.RhinoActivationLimitError as e:
+        print("AccessKey '%s' has reached it's temporary device limit" % args.access_key)
+        raise e
+except pvrhino.RhinoActivationRefusedError as e:
+        print("AccessKey '%s' refused" % args.access_key)
+        raise e
+except pvrhino.RhinoActivationThrottledError as e:
+        print("AccessKey '%s' has been throttled" % args.access_key)
+        raise e
+except pvrhino.RhinoError as e:
+        print("Failed to initialize Rhino")
+        raise e
 
 # Variabile accelerometru
 i2c = busio.I2C(board.SCL, board.SDA)
@@ -121,21 +148,23 @@ def masterApasari():
   while apasari < 30:
     citireAcc(nowX, nowY, nowZ)
     verificareApasare(nowX, nowY, nowZ) # verificam apasari pana ajung la 30
-    match verificareMarje(ultimaDist, distJos, distSus): # interpretare ultima apasare in functie de distanta
-      case -1:
-        smartPrint("Apasa mai profund!")
-      case 1:
-        smartPrint("Apasa mai putin!")
-      case 0:
-        smartPrint("Apasare OK")
+    marjeDist = verificareMarje(ultimaDist,distJos, distSus)
+    # interpretare ultima apasare in functie de distanta
+    if marjeDist == -1:
+      smartPrint("Apasa mai profund!")
+    elif marjeDist == 1:
+      smartPrint("Apasa mai putin!")
+    elif marjeDist == 0:
+      smartPrint("Apasare OK")
 
-    match verificareMarje(ultimaDurata*60, durJos, durSus): # interpretare ultima apasare in functie de durata
-      case -1:
-        smartPrint("Apasa mai rapid!")
-      case 1:
-        smartPrint("Apasa mai încet!")
-      case 0:
-        smartPrint("Apasare OK")
+    marjeDurata = verificareMarje(ultimaDurata*60,durJos, durSus)
+    # interpretare ultima apasare in functie de durata
+    if marjeDurata == -1:
+      smartPrint("Apasa mai rapid!")
+    elif marjeDurata == 1:
+      smartPrint("Apasa mai încet!")
+    elif marjeDurata == 0:
+      smartPrint("Apasare OK")
 
 # Functie tip victima in functie de input audio
 def dateVictima():
@@ -168,13 +197,12 @@ def continuare():
 
 # Functie ajustare marje pe baza tipului de victima
 def ajustareMarje(tipVictima):
-  match tipVictima:
-    case "childVictim":
-      distJos = 4.5
-      distSus = 5.5
-    case "babyVictim":
-      distJos = 3.3
-      distSus = 4.3
+  if tipVictima == "childVictim":
+    distJos = 4.5
+    distSus = 5.5
+  if tipVictima == "babyVictim":
+    distJos = 3.3
+    distSus = 4.3
 
 
 # Functie initializare program, input date victima
