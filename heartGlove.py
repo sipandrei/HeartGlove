@@ -55,13 +55,16 @@ oldZ = 0
 nowX = 0
 nowY = 0
 nowZ = 0
+acX = 0
+acY = 0
+acZ = 0
 
 # Variabile cu informații despre apăsări
 distJos = 0.035 # apasare minima de 3 centimetri jumatate
 distSus = 0.055 # apasare maxima de 5 centimetri jumatate
 durJos = 95 # cadenta minima de 95 de apasari pe minut
 durSus = 105 # cadenta maxima de 105 de apasari pe minut
-marjaAcc = -2 # diferența minimă de accelerație de 2 m/s^2 pentru considerarea mișcării -
+marjaAcc = 2 # diferența minimă de accelerație de 2 m/s^2 pentru considerarea mișcării -
 # este cu minus deoarece în timpul apasarii se merge spre -Z
 ultimaDist = 0
 ultimaDurata = 0
@@ -97,16 +100,18 @@ def sti():
 
 # Algoritm verificare apasari
 def verificareApasare(accX, accY, accZ):
-  if abs(accx - oldX) < marjaAcc and abs(accY - oldY) < marjaAcc:
-    if accZ - oldZ > marjaAcc: # Verificare miscare doar pe axa Z
+  global accelerometru,oldX,oldY,oldZ,marjaAcc,apasare,apasari,ultimaDist,ultimaDurata
+  if abs(accx) < marjaAcc and abs(accY) < marjaAcc:
+    if accZ - oldZ < -marjaAcc: # Verificare miscare doar pe axa Z
       apasare = True
       durata = 0
       sumAcc = 0 # initializare variabile pentru calcularea acceleratiei medie pe apasare
     while apasare == True:
       durata += 1
       sumAcc += abs(oldZ) # actualizare variabile pentru medie
-      citireAcc(accX, accY, accZ) # citim acceleratia noua
-      if accZ - oldZ < -marjaAcc: # verificare final apasare sau incepere decomprimare
+      oldZ = accZ
+      accZ = accelerometru.acceleration[2]-9.8 # citim acceleratia noua
+      if accZ - oldZ > marjaAcc: # verificare final apasare sau incepere decomprimare
         apasari += 1
         apasare = False # iesire din modul de apasare si incrementare numar apasari
         accMedie = sumAcc / durata
@@ -117,13 +122,14 @@ def verificareApasare(accX, accY, accZ):
 
 # Functie citire acceleratii
 def citireAcc(accX, accY, accZ):
-  accAcum = accelerometru.acceleration - 9.8
+  global oldX,oldY,oldZ, nowX, nowY, nowZ
+  accAcum = accelerometru.acceleration
   oldX = accX
   oldY = accY
   oldZ = accZ
-  accX = accAcum[0]
-  accY = accAcum[1]
-  accZ = accAcum[2]
+  nowX = accAcum[0]
+  nowY = accAcum[1]
+  nowZ = accAcum[2]-9.8
 
 # Functie pentru verificare interval
 def verificareMarje(contor, marjaJos, marjaSus):
