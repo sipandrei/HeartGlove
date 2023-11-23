@@ -73,11 +73,11 @@ def verificareApasare(accX, accY, accZ):
   if abs(accx - oldX) < marjaAcc and abs(accY - oldY) < marjaAcc:
     if accZ - oldZ > marjaAcc: # Verificare miscare doar pe axa Z
       apasare = True
-    durata = 0
-    sumAcc = 0 # initializare variabile pentru calcularea acceleratiei medie pe apasare
+      durata = 0
+      sumAcc = 0 # initializare variabile pentru calcularea acceleratiei medie pe apasare
     while apasare == True:
       durata += 1
-      sumAcc += oldZ # actualizare variabile pentru medie
+      sumAcc += abs(oldZ) # actualizare variabile pentru medie
       citireAcc(accX, accY, accZ) # citim acceleratia noua
       if accZ - oldZ < -marjaAcc: # verificare final apasare sau incepere decomprimare
         apasari += 1
@@ -90,7 +90,7 @@ def verificareApasare(accX, accY, accZ):
 
 # Functie citire acceleratii
 def citireAcc(accX, accY, accZ):
-  accAcum = accelerometru.acceleration
+  accAcum = accelerometru.acceleration - 9.8
   oldX = accX
   oldY = accY
   oldZ = accZ
