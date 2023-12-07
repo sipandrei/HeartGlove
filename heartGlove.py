@@ -10,6 +10,7 @@ import adafruit_adxl34x
 import pvrhino
 from pvrecorder import PvRecorder
 import env
+import math
 
 # Variabile pentru input audio și Picovoice
 devices = PvRecorder.get_available_devices()
@@ -114,9 +115,9 @@ def verificareApasare(accX, accY, accZ):
       if accZ - oldZ > marjaAcc: # verificare final apasare sau incepere decomprimare
         apasari += 1
         apasare = False # iesire din modul de apasare si incrementare numar apasari
-        accMedie = sumAcc / durata
+        accMedie = sumAcc / (durata-1)
         durata = 1e-3*durata #schimbarae din ms in s
-        ultimaDist = 1/2 * (accMedie*durata)**2 # calculare distanta parcursa pe baza acceleratiei medie
+        ultimaDist = 1/2 * accMedie*(durata)**2 # calculare distanta parcursa pe baza acceleratiei medie
         ultimaDurata = durata # stocare in variabile globale
       time.sleep(1e-3) # se asteapta 1 ms
 
@@ -151,6 +152,7 @@ def rasuflari():
 
 # Functie interpretare apasari
 def masterApasari():
+  timpStart = time.time()
   while apasari < 30:
     citireAcc(nowX, nowY, nowZ)
     verificareApasare(nowX, nowY, nowZ) # verificam apasari pana ajung la 30
@@ -162,7 +164,8 @@ def masterApasari():
       smartPrint("Apasa mai putin!")
     elif marjeDist == 0:
       smartPrint("Apasare OK")
-
+    if math.floor(time.time()-timpStart) > 60:
+      smartPrint("Timp prea mare pentru setul de apasari")
     marjeDurata = verificareMarje(ultimaDurata*60,durJos, durSus)
     # interpretare ultima apasare in functie de durata
     if marjeDurata == -1:
