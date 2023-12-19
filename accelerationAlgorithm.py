@@ -39,7 +39,8 @@ def verificareApasare(accX, accY, accZ):
         print(f"suma acc {sumAcc}")
         apasari += 1
         apasare = False # iesire din modul de apasare si incrementare numar apasari
-        accMedie = sumAcc / durata
+        accMedie = sumAcc / (durata-1)
+        print(f"ultima acc {accMedie}")
         durata = 1e-3*durata #schimbarae din ms in s
         ultimaDist = 1/2 * accMedie*(durata)**2 # calculare distanta parcursa pe baza acceleratiei medie
         ultimaDurata = durata # stocare in variabile globale
