@@ -21,7 +21,7 @@ distJos = 0.035 # apasare minima de 3 centimetri jumatate
 distSus = 0.055 # apasare maxima de 5 centimetri jumatate
 durJos = 95 # cadenta minima de 95 de apasari pe minut
 durSus = 105 # cadenta maxima de 105 de apasari pe minut
-marjaAcc = 2 # diferența minimă de accelerație de 2 m/s^2 pentru considerarea mișcării -
+marjaAcc = 1 # diferența minimă de accelerație de 2 m/s^2 pentru considerarea mișcării -
 # este cu minus deoarece în timpul apasarii se merge spre -Z
 ultimaDist = 0
 ultimaDurata = 0
@@ -31,31 +31,29 @@ accMedie = 0
 
 def verificareApasare(accX, accY, accZ):
   global accMedie,oldX,oldY,oldZ,marjaAcc,apasare,apasari,ultimaDist,ultimaDurata
-  if abs(accX) < marjaAcc+20 and abs(accY) < marjaAcc+20:
+  if abs(accX) < marjaAcc+8 and abs(accY) < marjaAcc+8:
     if accZ > marjaAcc: # Verificare miscare doar pe axa Z
       apasare = True
-      durata = 0
+      durata = time.time()
+      instDur = durata
+      vel = 0
       sumAcc = 0 # initializare variabile pentru calcularea acceleratiei medie pe apasare
     while apasare == True:
-      durata += 1
-      sumAcc += abs(oldZ) # actualizare variabile pentru medie
+      vel += oldZ*(time.time()-instDur) # actualizare variabile pentru medie
+      instDur = time.time()
       oldZ = accZ
       accZ = accelerometru.acceleration[2]-9.8 # citim acceleratia noua
       print(accZ)
-      if accZ < -marjaAcc and durata > 15: # verificare final apasare sau incepere decomprimare
+      if accZ < 0 : # verificare final apasare sau incepere decomprimare
         print(f"suma acc {sumAcc}")
         apasari += 1
         apasare = False # iesire din modul de apasare si incrementare numar apasari
-       	if durata != 1:
-          accMedie = sumAcc / (durata-1)
-        else:
-          accMedie = sumAcc / durata
+        durata = time.time() - durata #schimbare din ms in s
+        accMedie = vel #m/ms^2
         print(f"ultima acc {accMedie}")
-        durata = 1e-3*durata #schimbare din ms in s
-        ultimaDist = 1/2 * accMedie*(durata)**2 # calculare distanta parcursa pe baza acceleratiei medie
+        ultimaDist = vel*(durata) # calculare distanta parcursa pe baza acceleratiei medie
         ultimaDurata = durata # stocare in variabile globale
-        time.sleep(1e-3)
-      time.sleep(1e-3) # se asteapta 1 ms
+    time.sleep(1e-3)
 
 def citireAcc(accX, accY, accZ):
   global acX,acY,acZ,oldX,oldY,oldZ
