@@ -1,4 +1,10 @@
 import time
+import board
+import busio
+import adafruit_adxl34x
+
+i2c = busio.I2C(board.SCL, board.SDA)
+accelerometru = adafruit_adxl34x.ADXL345(i2c)
 # Variabile acceleratii
 oldX = 0
 oldY = 0
@@ -6,9 +12,9 @@ oldZ = 0
 nowX = 0
 nowY = 0
 nowZ = 0
-acX = int(0)
-acY = int(0)
-acZ = int(0)
+acX = 0
+acY = 0
+acZ = 0
 
 # Variabile cu informații despre apăsări
 distJos = 0.035 # apasare minima de 3 centimetri jumatate
@@ -25,8 +31,8 @@ accMedie = 0
 
 def verificareApasare(accX, accY, accZ):
   global accMedie,oldX,oldY,oldZ,marjaAcc,apasare,apasari,ultimaDist,ultimaDurata
-  if abs(accX) < marjaAcc and abs(accY) < marjaAcc:
-    if accZ - oldZ < -marjaAcc: # Verificare miscare doar pe axa Z
+  if abs(accX) < marjaAcc+20 and abs(accY) < marjaAcc+20:
+    if accZ > marjaAcc: # Verificare miscare doar pe axa Z
       apasare = True
       durata = 0
       sumAcc = 0 # initializare variabile pentru calcularea acceleratiei medie pe apasare
@@ -34,32 +40,37 @@ def verificareApasare(accX, accY, accZ):
       durata += 1
       sumAcc += abs(oldZ) # actualizare variabile pentru medie
       oldZ = accZ
-      accZ = int(input("Z:")) # citim acceleratia noua
-      if accZ - oldZ > marjaAcc: # verificare final apasare sau incepere decomprimare
+      accZ = accelerometru.acceleration[2]-9.8 # citim acceleratia noua
+      print(accZ)
+      if accZ < -marjaAcc and durata > 15: # verificare final apasare sau incepere decomprimare
         print(f"suma acc {sumAcc}")
         apasari += 1
         apasare = False # iesire din modul de apasare si incrementare numar apasari
-        accMedie = sumAcc / (durata-1)
+       	if durata != 1:
+          accMedie = sumAcc / (durata-1)
+        else:
+          accMedie = sumAcc / durata
         print(f"ultima acc {accMedie}")
-        durata = 1e-3*durata #schimbarae din ms in s
+        durata = 1e-3*durata #schimbare din ms in s
         ultimaDist = 1/2 * accMedie*(durata)**2 # calculare distanta parcursa pe baza acceleratiei medie
         ultimaDurata = durata # stocare in variabile globale
+        time.sleep(1e-3)
       time.sleep(1e-3) # se asteapta 1 ms
 
 def citireAcc(accX, accY, accZ):
   global acX,acY,acZ,oldX,oldY,oldZ
+  accAcum = accelerometru.acceleration
   oldX = accX
   oldY = accY
   oldZ = accZ
-  acX = int(input("X:"))
-  acY = int(input("Y:"))
-  acZ = int(input("Z:"))
-
+  acX = accAcum[0]
+  acY = accAcum[1]
+  acZ = accAcum[2]-9.8
 
 while(True):
   citireAcc(acX,acY,acZ)
-  print(acX,acY,acZ)
+  print(acZ)
   verificareApasare(acX,acY,acZ)
-  print(f"se apasa {apasare} \noldX:{oldX} oldY:{oldY} oldZ:{oldZ}")
+  print(f"se apasa {apasare} \noldX:{oldX} oldY:{oldY} oldZ:{oldZ} \napasari {apasari}")
   if(apasare == False):
-      print(f"ultima dist {ultimaDist} \nultima durata {ultimaDurata} \nacceleratie medie {accMedie}")
+      print(f"ultima dist {ultimaDist} \nultima durata {ultimaDurata} \nacceleratie medie {accMedie} \napasari {apasari}")
