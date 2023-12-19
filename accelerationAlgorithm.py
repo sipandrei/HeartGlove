@@ -21,9 +21,10 @@ ultimaDist = 0
 ultimaDurata = 0
 apasari = 0
 apasare = False
+accMedie = 0
 
 def verificareApasare(accX, accY, accZ):
-  global oldX,oldY,oldZ,marjaAcc,apasare,apasari,ultimaDist,ultimaDurata
+  global accMedie,oldX,oldY,oldZ,marjaAcc,apasare,apasari,ultimaDist,ultimaDurata
   if abs(accX) < marjaAcc and abs(accY) < marjaAcc:
     if accZ - oldZ < -marjaAcc: # Verificare miscare doar pe axa Z
       apasare = True
@@ -40,7 +41,7 @@ def verificareApasare(accX, accY, accZ):
         apasare = False # iesire din modul de apasare si incrementare numar apasari
         accMedie = sumAcc / durata
         durata = 1e-3*durata #schimbarae din ms in s
-        ultimaDist = 1/2 * (accMedie*durata)**2 # calculare distanta parcursa pe baza acceleratiei medie
+        ultimaDist = 1/2 * accMedie*(durata)**2 # calculare distanta parcursa pe baza acceleratiei medie
         ultimaDurata = durata # stocare in variabile globale
       time.sleep(1e-3) # se asteapta 1 ms
 
@@ -60,4 +61,4 @@ while(True):
   verificareApasare(acX,acY,acZ)
   print(f"se apasa {apasare} \noldX:{oldX} oldY:{oldY} oldZ:{oldZ}")
   if(apasare == False):
-      print(f"ultima dist {ultimaDist} \nultima durata {ultimaDurata}")
+      print(f"ultima dist {ultimaDist} \nultima durata {ultimaDurata} \nacceleratie medie {accMedie}")
