@@ -71,6 +71,7 @@ ultimaDist = 0
 ultimaDurata = 0
 apasari = 0
 apasare = False
+accMedie = 0
 
 # Clasa cu functii legate de instructajul pentru masaj cardiac
 class FunctiiProcedura:
@@ -101,25 +102,34 @@ def sti():
 
 # Algoritm verificare apasari
 def verificareApasare(accX, accY, accZ):
-  global accelerometru,oldX,oldY,oldZ,marjaAcc,apasare,apasari,ultimaDist,ultimaDurata
-  if abs(accx) < marjaAcc and abs(accY) < marjaAcc:
-    if accZ - oldZ < -marjaAcc: # Verificare miscare doar pe axa Z
+  global accMedie,oldX,oldY,oldZ,marjaAcc,apasare,apasari,ultimaDist,ultimaDurata
+  if abs(accX) < marjaAcc+8 and abs(accY) < marjaAcc+8:
+    if accZ > marjaAcc: # Verificare miscare doar pe axa Z
       apasare = True
-      durata = 0
+      inflex = 0
+      durata = time.time()
+      instDur = durata
+      vel = 0
       sumAcc = 0 # initializare variabile pentru calcularea acceleratiei medie pe apasare
-    while apasare == True:
-      durata += 1
-      sumAcc += abs(oldZ) # actualizare variabile pentru medie
-      oldZ = accZ
-      accZ = accelerometru.acceleration[2]-9.8 # citim acceleratia noua
-      if accZ - oldZ > marjaAcc: # verificare final apasare sau incepere decomprimare
-        apasari += 1
-        apasare = False # iesire din modul de apasare si incrementare numar apasari
-        accMedie = sumAcc / (durata-1)
-        durata = 1e-3*durata #schimbarae din ms in s
-        ultimaDist = 1/2 * accMedie*(durata)**2 # calculare distanta parcursa pe baza acceleratiei medie
-        ultimaDurata = durata # stocare in variabile globale
-      time.sleep(1e-3) # se asteapta 1 ms
+      while inflex < 2:
+        vel += oldZ*(time.time()-instDur) # actualizare variabile pentru medie
+        instDur = time.time()
+        oldZ = accZ
+        accZ = accelerometru.acceleration[2]-9.8 # citim acceleratia noua
+        if abs(accZ) < 0.5:
+          accZ = 0
+        print(accZ)
+        if accZ < -1:
+          inflex = inflex + 1
+        if inflex == 2 : # verificare final apasare sau incepere decomprimare
+          print(f"suma acc {sumAcc}")
+          apasari += 1
+          apasare = False # iesire din modul de apasare si incrementare numar apasari
+          durata = time.time() - durata #schimbare din ms in s
+          accMedie = vel/durata #m/ms^2
+          print(f"ultima acc {accMedie}")
+          ultimaDist = vel*(durata)/2 # calculare distanta parcursa pe baza acceleratiei medie
+          ultimaDurata = durata/2 # stocare in variabile globale
 
 # Functie citire acceleratii
 def citireAcc(accX, accY, accZ):
