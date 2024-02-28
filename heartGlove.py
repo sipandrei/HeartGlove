@@ -5,7 +5,6 @@
 import os
 import time
 import board
-import busio
 import adafruit_adxl34x
 import pvrhino
 from pvrecorder import PvRecorder
