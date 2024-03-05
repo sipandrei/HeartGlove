@@ -16,7 +16,7 @@ draw = ImageDraw.Draw(image)
 padding = -2
 top = padding
 bottom = height - padding
-x = 0
+x = padding
 
 sizeS = 9
 sizeB = 14
