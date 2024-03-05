@@ -6,7 +6,9 @@ import time
 
 RST = None
 
-display = Adafruit_SSD1306.SSD1306_128_32(rst = RST, i2c_bus=1)
+display = Adafruit_SSD1306.SSD1306_128_64(rst = RST, i2c_bus=1)
+display.begin()
+
 width = display.width
 height = display.height
 image = Image.new("1", (width, height))
@@ -16,8 +18,8 @@ top = padding
 bottom = height - padding
 x = 0
 
-sizeS = 7
-sizeB = 11
+sizeS = 9
+sizeB = 14
 fontBig = ImageFont.truetype('./fonts/fontMare.ttf', sizeB)
 fontSmall = ImageFont.truetype('./fonts/fontMic.ttf', sizeS)
 
@@ -58,24 +60,29 @@ def wrongCPR(apasareOk, vitezaOk):
   displayInitialization()
   draw.rectangle((0, 0, width, height), outline=0, fill=255)
   if apasareOk == False:
-    draw.text((x, top + sizeS), "Wrong Cadence", font = fontBig, fill=0)
+    draw.text((x+10, top + sizeB*1), "Wrong Cadence", font = fontBig, fill=0)
   if vitezaOk == False:
-    draw.text((x, top + sizeS*2), "Wrong Speed", font = fontBig, fill=0)
+    draw.text((x+10, top + sizeB*2), "Wrong Speed", font = fontBig, fill=0)
+  displayImage()
   time.sleep(.5)
 
 def pushFeedback(pushes, cadence, amplitude, apasareOk, vitezaOk):
   displayInitialization()
-  draw.text((x+3, top + sizeB), f'{cadence} bpm', font = fontBig, fill = 255)
-  draw.text((x+3, top + sizeB*2), f'{amplitude} cm', font = fontBig, fill = 255)
-  draw.text((x+3, top + sizeB*3), f'{pushes}/30', font = fontBig, fill = 255)
+  draw.text((x+50, top + sizeB), f'{cadence} bpm', font = fontBig, fill = 255)
+  draw.text((x+50, top + sizeB*2), f'{amplitude} cm', font = fontBig, fill = 255)
+  draw.text((x+50, top + sizeB*3), f'{pushes}/30', font = fontBig, fill = 255)
+  displayImage()
   time.sleep(.5)
   if apasareOk == False or vitezaOk == False:
     wrongCPR(apasareOk, vitezaOk)
 
 def breathInfo():
   displayInitialization()
-  draw.text((x+3, top + sizeB*2), f'Give 2 Breaths', font = fontBig, fill = 255)
+  draw.text((x+20, top + sizeB*2), f'Give 2 Breaths', font = fontBig, fill = 255)
+  displayImage()
   time.sleep(3)
 
-instructions()
+breathInfo()
+#pushFeedback(10, 60, 2,False,False)
+#instructions()
 
