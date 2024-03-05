@@ -38,6 +38,10 @@ def displayImage():
   display.image(image)
   display.display()
 
+def smartPrint(mesaj):
+  print(mesaj)
+  return(mesaj)
+
 def instructions():
   global draw, top, sizeS, x, fontSmall, fontBig
   messages = ["CHECK victim", "CALL 112", "Place victim on \n flat surface", "GIVE 30 \nchest compressions\nwhile kneeling ", 'Interlock hands \nPush on center \nof chest',"keep elbows LOCKED\npush from torso", "GIVE 2 breaths"]
@@ -50,4 +54,28 @@ def instructions():
   draw.text((x, top + sizeB*1), 'Rate depending \non victim', font = fontBig, fill=255)
   displayImage()
 
+def wrongCPR(apasareOk, vitezaOk):
+  displayInitialization()
+  draw.rectangle((0, 0, width, height), outline=0, fill=255)
+  if apasareOk == False:
+    draw.text((x, top + sizeS), "Wrong Cadence", font = fontBig, fill=0)
+  if vitezaOk == False:
+    draw.text((x, top + sizeS*2), "Wrong Speed", font = fontBig, fill=0)
+  time.sleep(.5)
+
+def pushFeedback(pushes, cadence, amplitude, apasareOk, vitezaOk):
+  displayInitialization()
+  draw.text((x+3, top + sizeB), f'{cadence} bpm', font = fontBig, fill = 255)
+  draw.text((x+3, top + sizeB*2), f'{amplitude} cm', font = fontBig, fill = 255)
+  draw.text((x+3, top + sizeB*3), f'{pushes}/30', font = fontBig, fill = 255)
+  time.sleep(.5)
+  if apasareOk == False or vitezaOk == False:
+    wrongCPR(apasareOk, vitezaOk)
+
+def breathInfo():
+  displayInitialization()
+  draw.text((x+3, top + sizeB*2), f'Give 2 Breaths', font = fontBig, fill = 255)
+  time.sleep(3)
+
 instructions()
+

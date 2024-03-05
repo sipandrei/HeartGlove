@@ -155,6 +155,7 @@ def verificareMarje(contor, marjaJos, marjaSus):
 # Functie principala output mesaje
 def smartPrint(mesaj):
   print(mesaj)
+  return(mesaj)
 
 # Functie ghidare respiratii
 def rasuflari():
@@ -164,6 +165,8 @@ def rasuflari():
 # Functie interpretare apasari
 def masterApasari():
   timpStart = time.time()
+  apasareOk = True
+  vitezaOk = True
   while apasari < 30:
     citireAcc(nowX, nowY, nowZ)
     verificareApasare(nowX, nowY, nowZ) # verificam apasari pana ajung la 30
@@ -175,8 +178,11 @@ def masterApasari():
       smartPrint("Apasa mai putin!")
     elif marjeDist == 0:
       smartPrint("Apasare OK")
+      apasareOk = True
     if math.floor(time.time()-timpStart) > 60:
       smartPrint("Timp prea mare pentru setul de apasari")
+    if marjeDist != 0:
+      apasareOk = False
     marjeDurata = verificareMarje(ultimaDurata*60,durJos, durSus)
     # interpretare ultima apasare in functie de durata
     if marjeDurata == -1:
@@ -185,6 +191,9 @@ def masterApasari():
       smartPrint("Apasa mai încet!")
     elif marjeDurata == 0:
       smartPrint("Apasare OK")
+      vitezaOk = True
+    if marjeDurata != 0:
+      vitezaOk = False
 
 # Functie tip victima in functie de input audio
 def dateVictima():
