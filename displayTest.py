@@ -16,8 +16,8 @@ top = padding
 bottom = height - padding
 x = 0
 
-sizeS = 9
-sizeB = 12
+sizeS = 7
+sizeB = 11
 fontBig = ImageFont.truetype('./fonts/fontMare.ttf', sizeB)
 fontSmall = ImageFont.truetype('./fonts/fontMic.ttf', sizeS)
 
@@ -40,19 +40,14 @@ def displayImage():
 
 def instructions():
   global draw, top, sizeS, x, fontSmall, fontBig
-  messages = ["CHECK victim", "CALL 112", "Place victim on flat surface", "GIVE 30 chest compressions", "GIVE 2 breaths"]
+  messages = ["CHECK victim", "CALL 112", "Place victim on \n flat surface", "GIVE 30 \nchest compressions\nwhile kneeling ", 'Interlock hands \nPush on center \nof chest',"keep elbows LOCKED\npush from torso", "GIVE 2 breaths"]
   for number, message in enumerate(messages):
     oneInstruction(number, message)
     displayImage()
-    time.sleep(1)
+    time.sleep(2)
     displayInitialization()
-  draw.text((x, top + 0), "for COMPRESSIONS", font = fontSmall, fill=255)
-  draw.text((x, top + sizeS), "place hands centered on chest", font = fontSmall, fill=255)
-  draw.text((x, top + sizeS*2), "elbows locked, stand over hands", font = fontSmall, fill=255)
-  draw.text((x, top + sizeS*3), "95 < cadence < 105", font = fontSmall, fill=255)
-  draw.text((x, top + sizeS*3), "Rate depending on victim", font = fontSmall, fill=255)
+  draw.text((x, top + sizeB*0), '95 < cadence < 105', font = fontBig, fill=255)
+  draw.text((x, top + sizeB*1), 'Rate depending \non victim', font = fontBig, fill=255)
   displayImage()
-width = display.fill
-height = display.height
 
 instructions()
