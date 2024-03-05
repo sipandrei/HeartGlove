@@ -6,7 +6,7 @@ import time
 
 RST = None
 
-display = Adafruit_SSD1306.SSD1306_128_64(rst = RST, i2c_bus=1)
+display = Adafruit_SSD1306.SSD1306_128_64(rst = RST, i2c_bus=4)
 display.begin()
 
 width = display.width
