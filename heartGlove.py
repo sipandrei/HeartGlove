@@ -313,11 +313,21 @@ def ajustareMarje(tipVictima):
 
 
 # Functie initializare program, input date victima
+def promptSetup(tipVictima):
+  displayInitialization()
+  draw.text((x+10, top + sizeB*1), "Child or Adult", font = fontBig, fill=255)
+  draw.text((x+10, top + sizeB*2), f'Current: {tipVictima}', font = fontBig, fill=255)
+  displayImage()
+
 def initialSetup():
   victima = ""
+  promptSetup(victima)
   while victima == "":
     smartPrint("Victim Data")
     victima = dateVictima()
+    if victima != "":
+      promptSetup(victima)
+      time.sleep(0.5)
     ajustareMarje(victima) # modifica marje in functie de victima https://www.cpracademylv.com/infant-cpr-certification/
 
 # Apelare functii
