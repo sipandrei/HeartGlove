@@ -1,10 +1,11 @@
 import pvrhino
 from pvrecorder import PvRecorder
+import env
 
 # Variabile pentru input audio și Picovoice
 devices = PvRecorder.get_available_devices()
 print(devices)
-recorder = PvRecorder(frame_length=512, device_index = 0)
+recorder = PvRecorder(frame_length=512, device_index = 2)
 recorder.start()
 ACCESS_KEY = f"{env.access_key}"
 CONTEXT_PATH = f"{env.context_path}"
@@ -12,9 +13,7 @@ print(f'{ACCESS_KEY}')
 print(CONTEXT_PATH)
 
 try:
-	rhino = pvrhino.create(
-        access_key=ACCESS_KEY,
-        context_path=CONTEXT_PATH)
+	rhino = pvrhino.create(access_key=ACCESS_KEY,context_path=CONTEXT_PATH)
 except pvrhino.RhinoInvalidArgumentError as e:
         print("One or more arguments provided to Rhino is invalid: ", args)
         print(e)
@@ -41,10 +40,11 @@ def get_next_audio_frame():
 def sti():
   intent = ""
   audio_frame = get_next_audio_frame() # preluare audio
-  is_finalized = rhino.process(audio_frame)
+  is_finalized = rhino.process(get_next_audio_frame())
   if is_finalized:
     inference = rhino.get_inference()
-    if inference.is_understood(): # verificare echivalenta input cu valorile definite
+    understood = inference.is_understood
+    if understood: # verificare echivalenta input cu valorile definite
       intent = inference.intent
       slots = inference.slots
   return intent # transmitere numele valorii echivalente
