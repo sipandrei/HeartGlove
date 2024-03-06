@@ -117,7 +117,7 @@ def wrongCPR(apasareOk, vitezaOk):
   if vitezaOk == False:
     draw.text((x+10, top + sizeB*2), "Wrong Speed", font = fontBig, fill=0)
   displayImage()
-  time.sleep(.5)
+  
 
 def pushFeedback(pushes, cadence, amplitude, apasareOk, vitezaOk):
   displayInitialization()
@@ -125,7 +125,7 @@ def pushFeedback(pushes, cadence, amplitude, apasareOk, vitezaOk):
   draw.text((x+50, top + sizeB*2), f'{amplitude} cm', font = fontBig, fill = 255)
   draw.text((x+50, top + sizeB*3), f'{pushes}/30', font = fontBig, fill = 255)
   displayImage()
-  time.sleep(.5)
+  
   if apasareOk == False or vitezaOk == False:
     wrongCPR(apasareOk, vitezaOk)
 
