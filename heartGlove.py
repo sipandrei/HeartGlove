@@ -5,15 +5,57 @@
 import os
 import time
 import board
-import busio
 import adafruit_adxl34x
 import pvrhino
 from pvrecorder import PvRecorder
 import env
 import math
 
+#librarii afisare SSD1306 OLED
+from PIL import Image
+from PIL import ImageDraw
+from PIL import ImageFont
+import Adafruit_SSD1306
+
+#initializare display
+RST = None
+display = Adafruit_SSD1306.SSD1306_128_64(rst = RST, i2c_bus = 4)
+display.begin()
+#variabile display
+width = display.width
+height = display.height
+image = Image.new("1", (width, height))
+draw = ImageDraw.Draw(image)
+padding = -2
+top = padding
+bottom = height-padding
+x = padding
+#variabile Font
+sizeS = 9
+sizeB = 14
+fontBig = ImageFont.truetype('./fonts/fontMare.ttf', sizeB)
+fontSmall = ImageFont.truetype('./fonts/fontMic.ttf', sizeS)
+#curatare ecran
+display.clear()
+display.display()
+
+def displayInitialization():
+  global draw
+  draw.rectangle((0,0,width,height), outline=0, fill=0)
+
+def oneInstruction(number, message):
+  global draw, top, sizeS, x, fontSmall, fontBig
+  draw.text((x, top + 0), f'{number}.', font = fontSmall, fill=255)
+  draw.text((x+3, top + sizeS), f'{message}', font = fontBig, fill = 255)
+
+def displayImage():
+  global image,display
+  display.image(image)
+  display.display()
+
 # Variabile pentru input audio și Picovoice
 devices = PvRecorder.get_available_devices()
+print(devices)
 recorder = PvRecorder(frame_length=512, device_index = 0)
 recorder.start()
 ACCESS_KEY = f"{env.access_key}"
@@ -91,6 +133,7 @@ def get_next_audio_frame():
 
 # Functie principala picovoice
 def sti():
+  intent = ""
   audio_frame = get_next_audio_frame() # preluare audio
   is_finalized = rhino.process(audio_frame)
   if is_finalized:
@@ -154,15 +197,41 @@ def verificareMarje(contor, marjaJos, marjaSus):
 # Functie principala output mesaje
 def smartPrint(mesaj):
   print(mesaj)
+  return(mesaj)
 
 # Functie ghidare respiratii
 def rasuflari():
-  smartPrint("2 respiratii")
+  displayInitialization()
+  draw.text((x+20, top + sizeB*2), f'Give 2 Breaths', font = fontBig, fill = 255)
+  displayImage()
   time.sleep(3)
+
+def wrongCPR(apasareOk, vitezaOk):
+  displayInitialization()
+  draw.rectangle((0, 0, width, height), outline=0, fill=255)
+  if apasareOk == False:
+    draw.text((x+10, top + sizeB*1), "Wrong Cadence", font = fontBig, fill=0)
+  if vitezaOk == False:
+    draw.text((x+10, top + sizeB*2), "Wrong Speed", font = fontBig, fill=0)
+  displayImage()
+  time.sleep(.5)
+
+def pushFeedback(pushes, cadence, amplitude, apasareOk, vitezaOk):
+  displayInitialization()
+  draw.text((x+50, top + sizeB), f'{cadence} bpm', font = fontBig, fill = 255)
+  draw.text((x+50, top + sizeB*2), f'{amplitude} cm', font = fontBig, fill = 255)
+  draw.text((x+50, top + sizeB*3), f'{pushes}/30', font = fontBig, fill = 255)
+  displayImage()
+  time.sleep(.5)
+  if apasareOk == False or vitezaOk == False:
+    wrongCPR(apasareOk, vitezaOk)
+
 
 # Functie interpretare apasari
 def masterApasari():
   timpStart = time.time()
+  apasareOk = True
+  vitezaOk = True
   while apasari < 30:
     citireAcc(nowX, nowY, nowZ)
     verificareApasare(nowX, nowY, nowZ) # verificam apasari pana ajung la 30
@@ -174,8 +243,11 @@ def masterApasari():
       smartPrint("Apasa mai putin!")
     elif marjeDist == 0:
       smartPrint("Apasare OK")
+      apasareOk = True
     if math.floor(time.time()-timpStart) > 60:
       smartPrint("Timp prea mare pentru setul de apasari")
+    if marjeDist != 0:
+      apasareOk = False
     marjeDurata = verificareMarje(ultimaDurata*60,durJos, durSus)
     # interpretare ultima apasare in functie de durata
     if marjeDurata == -1:
@@ -184,6 +256,10 @@ def masterApasari():
       smartPrint("Apasa mai încet!")
     elif marjeDurata == 0:
       smartPrint("Apasare OK")
+      vitezaOk = True
+    if marjeDurata != 0:
+      vitezaOk = False
+    pushFeedback(apasari, round(ultimaDurata*60, 1), round(ultimaDist*100,1),apasareOk, vitezaOk)
 
 # Functie tip victima in functie de input audio
 def dateVictima():
@@ -192,13 +268,25 @@ def dateVictima():
     return intent
   return ""
 
+def instructions():
+  global draw, top, sizeS, x, fontSmall, fontBig
+  messages = ["CHECK victim", "CALL 112", "Place victim on \n flat surface", "GIVE 30 \nchest compressions\nwhile kneeling ", 'Interlock hands \nPush on center \nof chest',"keep elbows LOCKED\npush from torso", "GIVE 2 breaths"]
+  for number, message in enumerate(messages):
+    oneInstruction(number, message)
+    displayImage()
+    time.sleep(2)
+    displayInitialization()
+  draw.text((x, top + sizeB*0), '95 < cadence < 105', font = fontBig, fill=255)
+  draw.text((x, top + sizeB*1), 'Rate depending \non victim', font = fontBig, fill=255)
+  displayImage()
+
 # Functie prezentare procedura masaj cardiac
 def prezentareProcedura():
-  print("to implement screen")
-  FunctiiProcedura.constienta()
+  instructions()
+  """ FunctiiProcedura.constienta()
   FunctiiProcedura.caiAeriene()
   FunctiiProcedura.verificareRespiratie()
-  FunctiiProcedura.masaj()
+  FunctiiProcedura.masaj() """
 
 # Functie oprire pe baza input audio
 def semnalStop():
@@ -225,11 +313,21 @@ def ajustareMarje(tipVictima):
 
 
 # Functie initializare program, input date victima
+def promptSetup(tipVictima):
+  displayInitialization()
+  draw.text((x+10, top + sizeB*1), "Child or Adult", font = fontBig, fill=255)
+  draw.text((x+10, top + sizeB*2), f'Current: {tipVictima}', font = fontBig, fill=255)
+  displayImage()
+
 def initialSetup():
   victima = ""
+  promptSetup(victima)
   while victima == "":
     smartPrint("Victim Data")
     victima = dateVictima()
+    if victima != "":
+      promptSetup(victima)
+      time.sleep(0.5)
     ajustareMarje(victima) # modifica marje in functie de victima https://www.cpracademylv.com/infant-cpr-certification/
 
 # Apelare functii
