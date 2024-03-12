@@ -5,15 +5,13 @@ import env
 # Variabile pentru input audio și Picovoice
 devices = PvRecorder.get_available_devices()
 print(devices)
-recorder = PvRecorder(frame_length=512, device_index = 2)
-recorder.start()
 ACCESS_KEY = f"{env.access_key}"
 CONTEXT_PATH = f"{env.context_path}"
 print(f'{ACCESS_KEY}')
 print(CONTEXT_PATH)
 
 try:
-	rhino = pvrhino.create(access_key=ACCESS_KEY,context_path=CONTEXT_PATH)
+	rhino = pvrhino.create(access_key=ACCESS_KEY,context_path=CONTEXT_PATH, sensitivity=0.5,endpoint_duration_sec=1.0, require_endpoint=True)
 except pvrhino.RhinoInvalidArgumentError as e:
         print("One or more arguments provided to Rhino is invalid: ", args)
         print(e)
@@ -34,6 +32,9 @@ except pvrhino.RhinoError as e:
         print("Failed to initialize Rhino")
         raise e
 
+recorder = PvRecorder(frame_length=rhino.frame_length, device_index=2)
+recorder.start()
+
 def get_next_audio_frame():
   return recorder.read()
 
@@ -49,11 +50,28 @@ def sti():
       slots = inference.slots
   return intent # transmitere numele valorii echivalente
 
+def sti2():
+  global recorder, rhino
+  pcm = recorder.read()
+  is_finalized = rhino.process(pcm)
+  if is_finalized:
+    inference = rhino.get_inference()
+    if inference.is_understood:
+      return inference.intent
+
 def dateVictima():
-  intent = sti()
-  if intent == "adultVictim" or intent == "childVictim" or intent == "babyVictim":
+  intent = sti2()
+  if intent == "adult" or intent == "child" or intent == "babyVictim":
     return intent
   return ""
 
-while True:
-  print(dateVictima())
+try:
+  while True:
+    var = dateVictima()
+    if var != "":
+      print(var)
+except KeyboardInterrupt:
+  print("Stopping...")
+finally:
+  recorder.delete()
+  rhino.delete()

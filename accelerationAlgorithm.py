@@ -136,5 +136,5 @@ while(True):
   print(f"se apasa {apasare} \noldX:{oldX} oldY:{oldY} oldZ:{oldZ} \napasari {apasari}")
   if(apasare == False):
       print(f"ultima dist {ultimaDist} \nultima durata {ultimaDurata} \nacceleratie medie {accMedie} \napasari {apasari}")
-  pushFeedback(apasari, round(ultimaDurata*60, 1), round(ultimaDist*100,1),True, True)
+  #pushFeedback(apasari, round(ultimaDurata*60, 1), round(ultimaDist*100,1),True, True)
 
