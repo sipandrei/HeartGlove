@@ -10,6 +10,7 @@ import pvrhino
 from pvrecorder import PvRecorder
 import env
 import math
+import busio
 
 #librarii afisare SSD1306 OLED
 from PIL import Image
@@ -56,17 +57,13 @@ def displayImage():
 # Variabile pentru input audio și Picovoice
 devices = PvRecorder.get_available_devices()
 print(devices)
-recorder = PvRecorder(frame_length=512, device_index = 0)
-recorder.start()
 ACCESS_KEY = f"{env.access_key}"
 CONTEXT_PATH = f"{env.context_path}"
 print(f'{ACCESS_KEY}')
 print(CONTEXT_PATH)
 
 try:
-	rhino = pvrhino.create(
-        access_key=ACCESS_KEY,
-        context_path=CONTEXT_PATH)
+	rhino = pvrhino.create(access_key=ACCESS_KEY,context_path=CONTEXT_PATH, sensitivity=0.5,endpoint_duration_sec=1.0, require_endpoint=True)
 except pvrhino.RhinoInvalidArgumentError as e:
         print("One or more arguments provided to Rhino is invalid: ", args)
         print(e)
@@ -86,6 +83,9 @@ except pvrhino.RhinoActivationThrottledError as e:
 except pvrhino.RhinoError as e:
         print("Failed to initialize Rhino")
         raise e
+
+recorder = PvRecorder(frame_length=rhino.frame_length, device_index = 2)
+recorder.start()
 
 # Variabile accelerometru
 i2c = busio.I2C(board.SCL, board.SDA)
@@ -142,6 +142,15 @@ def sti():
       intent = inference.intent
       slots = inference.slots
   return intent # transmitere numele valorii echivalente
+
+def sti2():
+  global recorder,rhino
+  pcm = recorder.read()
+  is_finalized = rhino.process(pcm)
+  if is_finalized:
+    inference = rhino.get_inference()
+    if inference.is_understood:
+      return inference.intent
 
 # Algoritm verificare apasari
 def verificareApasare(accX, accY, accZ):
@@ -263,8 +272,8 @@ def masterApasari():
 
 # Functie tip victima in functie de input audio
 def dateVictima():
-  intent = sti()
-  if intent == "adultVictim" or intent == "childVictim" or intent == "babyVictim":
+  intent = sti2()
+  if intent == "adult" or intent == "child" or intent == "babyVictim":
     return intent
   return ""
 
@@ -304,7 +313,7 @@ def continuare():
 
 # Functie ajustare marje pe baza tipului de victima
 def ajustareMarje(tipVictima):
-  if tipVictima == "childVictim":
+  if tipVictima == "child":
     distJos = 4.5
     distSus = 5.5
   if tipVictima == "babyVictim":
@@ -315,7 +324,7 @@ def ajustareMarje(tipVictima):
 # Functie initializare program, input date victima
 def promptSetup(tipVictima):
   displayInitialization()
-  draw.text((x+10, top + sizeB*1), "Child or Adult", font = fontBig, fill=255)
+  draw.text((x+10, top + sizeB*1), "Child or Adult victim", font = fontBig, fill=255)
   draw.text((x+10, top + sizeB*2), f'Current: {tipVictima}', font = fontBig, fill=255)
   displayImage()
 
