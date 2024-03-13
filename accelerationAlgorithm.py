@@ -1,3 +1,4 @@
+
 import time
 import board
 import busio
@@ -72,6 +73,7 @@ def citireAcc(accX, accY, accZ):
   acX = accAcum[0]
   acY = accAcum[1]
   acZ = accAcum[2]-9.8
+#  time.sleep(0.1)
 
 RST = None
 
@@ -136,5 +138,5 @@ while(True):
   print(f"se apasa {apasare} \noldX:{oldX} oldY:{oldY} oldZ:{oldZ} \napasari {apasari}")
   if(apasare == False):
       print(f"ultima dist {ultimaDist} \nultima durata {ultimaDurata} \nacceleratie medie {accMedie} \napasari {apasari}")
-  #pushFeedback(apasari, round(ultimaDurata*60, 1), round(ultimaDist*100,1),True, True)
+  pushFeedback(apasari, round(ultimaDurata*60, 1), round(ultimaDist*100,1),True, True)
 
