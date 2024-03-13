@@ -2,6 +2,7 @@
 #presupunem accelerometru ADXL345
 #folosim libraria adafruit_adxl34x
 #folosim picovoice pentru speech recognition https://www.picovoice.ai
+import busio
 import os
 import time
 import board
