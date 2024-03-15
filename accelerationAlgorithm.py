@@ -7,6 +7,7 @@ from PIL import Image
 from PIL import ImageDraw
 from PIL import ImageFont
 import Adafruit_SSD1306
+from threading import Thread
 
 i2c = busio.I2C(board.SCL, board.SDA)
 accelerometru = adafruit_adxl34x.ADXL345(i2c)
@@ -119,7 +120,7 @@ def wrongCPR(apasareOk, vitezaOk):
   if vitezaOk == False:
     draw.text((x+10, top + sizeB*2), "Wrong Speed", font = fontBig, fill=0)
   displayImage()
-  
+
 
 def pushFeedback(pushes, cadence, amplitude, apasareOk, vitezaOk):
   displayInitialization()
@@ -127,7 +128,7 @@ def pushFeedback(pushes, cadence, amplitude, apasareOk, vitezaOk):
   draw.text((x+50, top + sizeB*2), f'{amplitude} cm', font = fontBig, fill = 255)
   draw.text((x+50, top + sizeB*3), f'{pushes}/30', font = fontBig, fill = 255)
   displayImage()
-  
+
   if apasareOk == False or vitezaOk == False:
     wrongCPR(apasareOk, vitezaOk)
 
