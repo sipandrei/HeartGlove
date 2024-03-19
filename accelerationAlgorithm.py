@@ -34,9 +34,11 @@ ultimaDurata = 0
 apasari = 0
 apasare = False
 accMedie = 0
+sumaDurata = 0
+cadenta = 0
 
 def verificareApasare(accX, accY, accZ):
-  global accMedie,oldX,oldY,oldZ,marjaAcc,apasare,apasari,ultimaDist,ultimaDurata
+  global accMedie,oldX,oldY,oldZ,marjaAcc,apasare,apasari,ultimaDist,ultimaDurata, sumaDurata
   if abs(accX) < marjaAcc+8 and abs(accY) < marjaAcc+8:
     if accZ > marjaAcc: # Verificare miscare doar pe axa Z
       apasare = True
@@ -63,7 +65,10 @@ def verificareApasare(accX, accY, accZ):
           accMedie = vel/durata #m/ms^2
           print(f"ultima acc {accMedie}")
           ultimaDist = vel*(durata)/2 # calculare distanta parcursa pe baza acceleratiei medie
-          ultimaDurata = durata/2 # stocare in variabile globale
+          ultimaDurata = durata # stocare in variabile globale
+          if apasari%3==0:
+            sumaDurata = 0
+          sumaDurata += ultimaDurata 
 
 def citireAcc(accX, accY, accZ):
   global acX,acY,acZ,oldX,oldY,oldZ
@@ -91,7 +96,7 @@ bottom = height - padding
 x = padding
 
 sizeS = 9
-sizeB = 14
+sizeB = 17
 fontBig = ImageFont.truetype('./fonts/fontMare.ttf', sizeB)
 fontSmall = ImageFont.truetype('./fonts/fontMic.ttf', sizeS)
 
@@ -110,23 +115,25 @@ def oneInstruction(number, message):
 def displayImage():
   global image,display
   display.image(image)
-  display.display()
+  x=Thread(target = display.display)
+  x.start()
+  x.join()
 
 def wrongCPR(apasareOk, vitezaOk):
   displayInitialization()
   draw.rectangle((0, 0, width, height), outline=0, fill=255)
   if apasareOk == False:
-    draw.text((x+10, top + sizeB*1), "Wrong Cadence", font = fontBig, fill=0)
+    draw.text((x+5, top + sizeB*1/2), "Wrong Cadence", font = fontBig, fill=0)
   if vitezaOk == False:
-    draw.text((x+10, top + sizeB*2), "Wrong Speed", font = fontBig, fill=0)
+    draw.text((x+5, top + sizeB*3/2), "Wrong Speed", font = fontBig, fill=0)
   displayImage()
 
 
 def pushFeedback(pushes, cadence, amplitude, apasareOk, vitezaOk):
   displayInitialization()
-  draw.text((x+50, top + sizeB), f'{cadence} bpm', font = fontBig, fill = 255)
-  draw.text((x+50, top + sizeB*2), f'{amplitude} cm', font = fontBig, fill = 255)
-  draw.text((x+50, top + sizeB*3), f'{pushes}/30', font = fontBig, fill = 255)
+  draw.text((x+30, top + sizeB/2), f'{cadence} bpm', font = fontBig, fill = 255)
+  draw.text((x+30, top + sizeB*3/2), f'{amplitude} cm', font = fontBig, fill = 255)
+  draw.text((x+30, top + sizeB*5/2), f'{pushes}/30', font = fontBig, fill = 255)
   displayImage()
 
   if apasareOk == False or vitezaOk == False:
@@ -139,5 +146,10 @@ while(True):
   print(f"se apasa {apasare} \noldX:{oldX} oldY:{oldY} oldZ:{oldZ} \napasari {apasari}")
   if(apasare == False):
       print(f"ultima dist {ultimaDist} \nultima durata {ultimaDurata} \nacceleratie medie {accMedie} \napasari {apasari}")
-  pushFeedback(apasari, round(ultimaDurata*60, 1), round(ultimaDist*100,1),True, True)
+  if apasari==0 or sumaDurata==0:
+    if cadenta == 0:
+      cadenta = 0
+  else:
+    cadenta = 60/(sumaDurata*10/(apasari%3+1))
+  pushFeedback(apasari, round(cadenta, 1), round(ultimaDist*100,1),True, True)
 

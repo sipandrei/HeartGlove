@@ -2,7 +2,7 @@ from PIL import Image
 from PIL import ImageDraw
 from PIL import ImageFont
 import Adafruit_SSD1306
-from threading
+import threading
 import time
 
 RST = None
@@ -31,7 +31,8 @@ def displayInitialization():
   global draw
   draw.rectangle((0,0,width,height), outline=0, fill=0)
 
-initThread = threading.Thread(displayInitialization)
+initThread = threading.Thread(target = displayInitialization)
+
 
 def oneInstruction(number, message):
   global draw, top, sizeS, x, fontSmall, fontBig
@@ -41,7 +42,10 @@ def oneInstruction(number, message):
 def displayImage():
   global image,display
   display.image(image)
-  display.display()
+  x=Thread(target = display.display)
+  x.start()
+  x.join()
+  #display.display()
 
 displayThread = threading.Thread(target=displayImage)
 
@@ -76,8 +80,8 @@ def pushFeedback(pushes, cadence, amplitude, apasareOk, vitezaOk):
   draw.text((x+50, top + sizeB), f'{cadence} bpm', font = fontBig, fill = 255)
   draw.text((x+50, top + sizeB*2), f'{amplitude} cm', font = fontBig, fill = 255)
   draw.text((x+50, top + sizeB*3), f'{pushes}/30', font = fontBig, fill = 255)
+
   displayImage()
-  time.sleep(.5)
   if apasareOk == False or vitezaOk == False:
     wrongCPR(apasareOk, vitezaOk)
 
@@ -87,12 +91,10 @@ def breathInfo():
   displayImage()
   time.sleep(3)
 
-initThread.start()
-displayThread.start()
 while True:
 #breathInfo()
+
   print(time.time())
-  pushFeedback(time.time(), 60, 2,False,False)
-  time.sleep(0.1)
+  pushFeedback(time.time(), 60, 2,True,True)
 #instructions()
 
