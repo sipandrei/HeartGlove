@@ -2,7 +2,7 @@ from PIL import Image
 from PIL import ImageDraw
 from PIL import ImageFont
 import Adafruit_SSD1306
-from threading import Thread
+from threading
 import time
 
 RST = None
@@ -31,7 +31,7 @@ def displayInitialization():
   global draw
   draw.rectangle((0,0,width,height), outline=0, fill=0)
 
-initThread = Thread(displayInitialization())
+initThread = threading.Thread(displayInitialization)
 
 def oneInstruction(number, message):
   global draw, top, sizeS, x, fontSmall, fontBig
@@ -43,7 +43,7 @@ def displayImage():
   display.image(image)
   display.display()
 
-displayThread = Thread(displayImage())
+displayThread = threading.Thread(target=displayImage)
 
 def smartPrint(mesaj):
   print(mesaj)
