@@ -35,7 +35,7 @@ bottom = height-padding
 x = padding
 #variabile Font
 sizeS = 9
-sizeB = 17
+sizeB = 14
 fontBig = ImageFont.truetype('./fonts/fontMare.ttf', sizeB)
 fontSmall = ImageFont.truetype('./fonts/fontMic.ttf', sizeS)
 #curatare ecran
@@ -151,6 +151,7 @@ def sti():
 
 def sti2():
   global recorder,rhino
+  print("Waiting for input . . .")
   pcm = recorder.read()
   is_finalized = rhino.process(pcm)
   if is_finalized:
@@ -160,7 +161,7 @@ def sti2():
 
 # Algoritm verificare apasari
 def verificareApasare(accX, accY, accZ):
-  global accMedie,oldX,oldY,oldZ,marjaAcc,apasare,apasari,ultimaDist,ultimaDurata
+  global sumaDurata,accMedie,oldX,oldY,oldZ,marjaAcc,apasare,apasari,ultimaDist,ultimaDurata
   if abs(accX) < marjaAcc+8 and abs(accY) < marjaAcc+8:
     if accZ > marjaAcc: # Verificare miscare doar pe axa Z
       apasare = True
@@ -222,17 +223,17 @@ def rasuflari():
   displayInitialization()
   draw.text((x+20, top + sizeB*2), f'Give 2 Breaths', font = fontBig, fill = 255)
   displayImage()
-  time.sleep(3)
+  time.sleep(2)
 
 def wrongCPR(apasareOk, vitezaOk):
   displayInitialization()
   draw.rectangle((0, 0, width, height), outline=0, fill=255)
   if apasareOk == False:
-    draw.text((x+5, top + sizeB*1/2), "Wrong Cadence", font = fontBig, fill=0)
+    draw.text((x+5, top + sizeB*1/2), "Wrong Amplitude", font = fontBig, fill=0)
   if vitezaOk == False:
-    draw.text((x+5, top + sizeB*3/2), "Wrong Speed", font = fontBig, fill=0)
+    draw.text((x+5, top + sizeB*3/2), "Wrong Cadence", font = fontBig, fill=0)
   displayImage()
-  time.sleep(.5)
+  #time.sleep(.2) de facut cu time.time
 
 def pushFeedback(pushes, cadence, amplitude, apasareOk, vitezaOk):
   displayInitialization()
@@ -241,12 +242,14 @@ def pushFeedback(pushes, cadence, amplitude, apasareOk, vitezaOk):
   draw.text((x+50, top + sizeB*5/2), f'{pushes}/30', font = fontBig, fill = 255)
   displayImage()
 
-  if apasareOk == False or vitezaOk == False:
+  if pushes > 3 and (apasareOk == False or vitezaOk == False):
     wrongCPR(apasareOk, vitezaOk)
 
 
 # Functie interpretare apasari
 def masterApasari():
+  global cadenta,apasari
+  apasari = 0
   timpStart = time.time()
   apasareOk = True
   vitezaOk = True
@@ -267,7 +270,13 @@ def masterApasari():
       smartPrint("Timp prea mare pentru setul de apasari")
     if marjeDist != 0:
       apasareOk = False
-    marjeDurata = verificareMarje(ultimaDurata*60,durJos, durSus)
+    if apasari == 0 or sumaDurata == 0:
+      if cadenta == 0:
+        cadenta = 0
+    else:
+      cadenta = 60/(sumaDurata*10/(apasari%3+1))
+    cadenta = round(cadenta,1)
+    marjeDurata = verificareMarje(cadenta,durJos, durSus)
     # interpretare ultima apasare in functie de durata
     if marjeDurata == -1:
       smartPrint("Apasa mai rapid!")
@@ -278,12 +287,7 @@ def masterApasari():
       vitezaOk = True
     if marjeDurata != 0:
       vitezaOk = False
-    if apasari == 0 or sumaDurata == 0:
-      if cadenta == 0:
-        cadenta = 0
-    else:
-      cadenta = 60/(sumaDurata*10/(apasari%3+1))
-    pushFeedback(apasari, round(cadenta, 1), round(ultimaDist*100,1),apasareOk, vitezaOk)
+    pushFeedback(apasari, cadenta, round(ultimaDist*100,1),apasareOk, vitezaOk)
 
 # Functie tip victima in functie de input audio
 def dateVictima():
@@ -293,16 +297,18 @@ def dateVictima():
   return ""
 
 def instructions():
-  global draw, top, sizeS, x, fontSmall, fontBig
+  global draw, top, sizeS, x, fontSmall, fontBig, distJos,distSus
   messages = ["CHECK victim", "CALL 112", "Place victim on \n flat surface", "GIVE 30 \nchest compressions\nwhile kneeling ", 'Interlock hands \nPush on center \nof chest',"keep elbows LOCKED\npush from torso", "GIVE 2 breaths"]
   for number, message in enumerate(messages):
+    displayInitialization()
     oneInstruction(number, message)
     displayImage()
     time.sleep(2)
-    displayInitialization()
+  displayInitialization() 
   draw.text((x, top + sizeB*0), '95 < cadence < 105', font = fontBig, fill=255)
-  draw.text((x, top + sizeB*1), 'Rate depending \non victim', font = fontBig, fill=255)
+  draw.text((x, top + sizeB*1), f'{round(distJos*100,1)} < amplitude < {round(distSus*100,1)}', font = fontBig, fill=255)
   displayImage()
+  time.sleep(2)
 
 # Functie prezentare procedura masaj cardiac
 def prezentareProcedura():
@@ -321,19 +327,20 @@ def semnalStop():
 
 # Functie continuare pe baza input audio
 def continuare():
-  intent = sti()
+  intent = sti2()
   if intent == "stepDone":
     return True
   return False
 
 # Functie ajustare marje pe baza tipului de victima
 def ajustareMarje(tipVictima):
+  global distJos, distSus
   if tipVictima == "child":
-    distJos = 4.5
-    distSus = 5.5
+    distJos = 0.045
+    distSus = 0.055
   if tipVictima == "babyVictim":
-    distJos = 3.3
-    distSus = 4.3
+    distJos = 0.033
+    distSus = 0.043
 
 
 # Functie initializare program, input date victima
@@ -347,8 +354,8 @@ def initialSetup():
   victima = ""
   promptSetup(victima)
   while victima == "":
-    smartPrint("Victim Data")
     victima = dateVictima()
+    smartPrint(f"Victim Data:{victima}")
     if victima != "":
       promptSetup(victima)
       time.sleep(0.5)
