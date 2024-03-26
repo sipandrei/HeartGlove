@@ -237,9 +237,9 @@ def wrongCPR(apasareOk, vitezaOk):
 
 def pushFeedback(pushes, cadence, amplitude, apasareOk, vitezaOk):
   displayInitialization()
-  draw.text((x+50, top + sizeB/2), f'{cadence} bpm {vitezaOk}', font = fontBig, fill = 255)
-  draw.text((x+50, top + sizeB*3/2), f'{amplitude} cm {apasareOk}', font = fontBig, fill = 255)
-  draw.text((x+50, top + sizeB*5/2), f'{pushes}/30', font = fontBig, fill = 255)
+  draw.text((x+40, top + sizeB/2), f'{cadence} bpm {vitezaOk}', font = fontBig, fill = 255)
+  draw.text((x+40, top + sizeB*3/2), f'{amplitude} cm {apasareOk}', font = fontBig, fill = 255)
+  draw.text((x+40, top + sizeB*5/2), f'{pushes}/30', font = fontBig, fill = 255)
   displayImage()
 
 """   if pushes > 3 and (apasareOk == False or vitezaOk == False):
@@ -270,7 +270,7 @@ def masterApasari():
       apasareOk = "="
     if math.floor(time.time()-timpStart) > 60:
       smartPrint("Timp prea mare pentru setul de apasari")
-""" if marjeDist != 0:
+    """ if marjeDist != 0:
       apasareOk = False"""
     if apasari == 0 or sumaDurata == 0:
       if cadenta == 0:
@@ -289,8 +289,8 @@ def masterApasari():
     elif marjeDurata == 0:
       smartPrint("Apasare OK")
       vitezaOk = "="
-    if marjeDurata != 0:
-      vitezaOk = False
+    """if marjeDurata != 0:
+      vitezaOk = False"""
     pushFeedback(apasari, cadenta, round(ultimaDist*100,1),apasareOk, vitezaOk)
 
 # Functie tip victima in functie de input audio
@@ -350,8 +350,8 @@ def ajustareMarje(tipVictima):
 # Functie initializare program, input date victima
 def promptSetup(tipVictima):
   displayInitialization()
-  draw.text((x+10, top + sizeB*1), "Child or Adult victim", font = fontBig, fill=255)
-  draw.text((x+10, top + sizeB*2), f'Current: {tipVictima}', font = fontBig, fill=255)
+  draw.text((x+10, top + sizeB*1), "Child or Adult\nvictim", font = fontBig, fill=255)
+  draw.text((x+10, top + sizeB*3), f'Current: {tipVictima}', font = fontBig, fill=255)
   displayImage()
 
 def initialSetup():
@@ -374,15 +374,20 @@ def continuePrompt():
     intent = continuare()
   for i in range(3):
     displayInitialization()
-    oneInstruction("",f'Starting in ${3-i}')
+    oneInstruction("",f'Starting in {3-i}')
     displayImage()
+    time.sleep(1)
 
 
 # Apelare functii
 initialSetup()
 prezentareProcedura()
 continuePrompt()
-while semnalStop() != "finish":
+stop = ""
+while stop != "finish":
   masterApasari()
   rasuflari()
+  startInterval = time.time()
+  while time.time() - startInterval < 5 and stop != "finish":
+    stop = semnalStop()
 rhino.delete() # Oprire picovoice rhino
