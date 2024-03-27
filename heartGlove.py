@@ -12,6 +12,7 @@ from pvrecorder import PvRecorder
 import env
 import math
 import busio
+from threading import Thread
 
 #librarii afisare SSD1306 OLED
 from PIL import Image
@@ -53,7 +54,9 @@ def oneInstruction(number, message):
 def displayImage():
   global image,display
   display.image(image)
-  display.display()
+  i = Thread(target = display.display)
+  i.start()
+  i.join()
 
 # Variabile pentru input audio și Picovoice
 devices = PvRecorder.get_available_devices()
@@ -104,8 +107,8 @@ acY = 0
 acZ = 0
 
 # Variabile cu informații despre apăsări
-distJos = 0.035 # apasare minima de 3 centimetri jumatate
-distSus = 0.055 # apasare maxima de 5 centimetri jumatate
+distJos = 0.045 # apasare minima de 3 centimetri jumatate
+distSus = 0.065 # apasare maxima de 5 centimetri jumatate
 durJos = 95 # cadenta minima de 95 de apasari pe minut
 durSus = 105 # cadenta maxima de 105 de apasari pe minut
 marjaAcc = 2 # diferența minimă de accelerație de 2 m/s^2 pentru considerarea mișcării -
@@ -115,6 +118,8 @@ ultimaDurata = 0
 apasari = 0
 apasare = False
 accMedie = 0
+sumaDurata = 0
+cadenta = 0
 
 # Clasa cu functii legate de instructajul pentru masaj cardiac
 class FunctiiProcedura:
@@ -146,6 +151,7 @@ def sti():
 
 def sti2():
   global recorder,rhino
+  print("Waiting for input . . .")
   pcm = recorder.read()
   is_finalized = rhino.process(pcm)
   if is_finalized:
@@ -155,7 +161,7 @@ def sti2():
 
 # Algoritm verificare apasari
 def verificareApasare(accX, accY, accZ):
-  global accMedie,oldX,oldY,oldZ,marjaAcc,apasare,apasari,ultimaDist,ultimaDurata
+  global sumaDurata,accMedie,oldX,oldY,oldZ,marjaAcc,apasare,apasari,ultimaDist,ultimaDurata
   if abs(accX) < marjaAcc+8 and abs(accY) < marjaAcc+8:
     if accZ > marjaAcc: # Verificare miscare doar pe axa Z
       apasare = True
@@ -183,6 +189,9 @@ def verificareApasare(accX, accY, accZ):
           print(f"ultima acc {accMedie}")
           ultimaDist = vel*(durata)/2 # calculare distanta parcursa pe baza acceleratiei medie
           ultimaDurata = durata/2 # stocare in variabile globale
+          if apasari%3==0:
+            sumaDurata = 0
+          sumaDurata += ultimaDurata
 
 # Functie citire acceleratii
 def citireAcc(accX, accY, accZ):
@@ -214,62 +223,75 @@ def rasuflari():
   displayInitialization()
   draw.text((x+20, top + sizeB*2), f'Give 2 Breaths', font = fontBig, fill = 255)
   displayImage()
-  time.sleep(3)
+  time.sleep(2)
 
 def wrongCPR(apasareOk, vitezaOk):
   displayInitialization()
   draw.rectangle((0, 0, width, height), outline=0, fill=255)
   if apasareOk == False:
-    draw.text((x+10, top + sizeB*1), "Wrong Cadence", font = fontBig, fill=0)
+    draw.text((x+5, top + sizeB*1/2), "Wrong Amplitude", font = fontBig, fill=0)
   if vitezaOk == False:
-    draw.text((x+10, top + sizeB*2), "Wrong Speed", font = fontBig, fill=0)
+    draw.text((x+5, top + sizeB*3/2), "Wrong Cadence", font = fontBig, fill=0)
   displayImage()
-  time.sleep(.5)
+  #time.sleep(.2) de facut cu time.time
 
 def pushFeedback(pushes, cadence, amplitude, apasareOk, vitezaOk):
   displayInitialization()
-  draw.text((x+50, top + sizeB), f'{cadence} bpm', font = fontBig, fill = 255)
-  draw.text((x+50, top + sizeB*2), f'{amplitude} cm', font = fontBig, fill = 255)
-  draw.text((x+50, top + sizeB*3), f'{pushes}/30', font = fontBig, fill = 255)
+  draw.text((x+40, top + sizeB/2), f'{cadence} bpm {vitezaOk}', font = fontBig, fill = 255)
+  draw.text((x+40, top + sizeB*3/2), f'{amplitude} cm {apasareOk}', font = fontBig, fill = 255)
+  draw.text((x+40, top + sizeB*5/2), f'{pushes}/30', font = fontBig, fill = 255)
   displayImage()
-  time.sleep(.5)
-  if apasareOk == False or vitezaOk == False:
-    wrongCPR(apasareOk, vitezaOk)
+
+"""   if pushes > 3 and (apasareOk == False or vitezaOk == False):
+    wrongCPR(apasareOk, vitezaOk) """
 
 
 # Functie interpretare apasari
 def masterApasari():
+  global cadenta,apasari
+  apasari = 0
   timpStart = time.time()
-  apasareOk = True
-  vitezaOk = True
+  apasareOk = "ok"
+  vitezaOk = "ok"
   while apasari < 30:
     citireAcc(nowX, nowY, nowZ)
+    print(acZ)
     verificareApasare(nowX, nowY, nowZ) # verificam apasari pana ajung la 30
     marjeDist = verificareMarje(ultimaDist,distJos, distSus)
     # interpretare ultima apasare in functie de distanta
     if marjeDist == -1:
+      apasareOk = "+"
       smartPrint("Apasa mai profund!")
     elif marjeDist == 1:
+      apasareOk = "-"
       smartPrint("Apasa mai putin!")
     elif marjeDist == 0:
       smartPrint("Apasare OK")
-      apasareOk = True
+      apasareOk = "="
     if math.floor(time.time()-timpStart) > 60:
       smartPrint("Timp prea mare pentru setul de apasari")
-    if marjeDist != 0:
-      apasareOk = False
-    marjeDurata = verificareMarje(ultimaDurata*60,durJos, durSus)
+    """ if marjeDist != 0:
+      apasareOk = False"""
+    if apasari == 0 or sumaDurata == 0:
+      if cadenta == 0:
+        cadenta = 0
+    else:
+      cadenta = 60/(sumaDurata*10/(apasari%3+1))
+    cadenta = round(cadenta,1)
+    marjeDurata = verificareMarje(cadenta,durJos, durSus)
     # interpretare ultima apasare in functie de durata
     if marjeDurata == -1:
+      vitezaOk = "+"
       smartPrint("Apasa mai rapid!")
     elif marjeDurata == 1:
+      vitezaOk = "-"
       smartPrint("Apasa mai încet!")
     elif marjeDurata == 0:
       smartPrint("Apasare OK")
-      vitezaOk = True
-    if marjeDurata != 0:
-      vitezaOk = False
-    pushFeedback(apasari, round(ultimaDurata*60, 1), round(ultimaDist*100,1),apasareOk, vitezaOk)
+      vitezaOk = "="
+    """if marjeDurata != 0:
+      vitezaOk = False"""
+    pushFeedback(apasari, cadenta, round(ultimaDist*100,1),apasareOk, vitezaOk)
 
 # Functie tip victima in functie de input audio
 def dateVictima():
@@ -279,16 +301,18 @@ def dateVictima():
   return ""
 
 def instructions():
-  global draw, top, sizeS, x, fontSmall, fontBig
-  messages = ["CHECK victim", "CALL 112", "Place victim on \n flat surface", "GIVE 30 \nchest compressions\nwhile kneeling ", 'Interlock hands \nPush on center \nof chest',"keep elbows LOCKED\npush from torso", "GIVE 2 breaths"]
+  global draw, top, sizeS, x, fontSmall, fontBig, distJos,distSus
+  messages = ["CHECK victim", "CALL 112", "Place victim on \n flat surface", "GIVE 30 \nchest \ncompressions\nwhile kneeling ", 'Interlock hands \nPush on center \nof chest',"keep elbows\n LOCKED\npush from torso", "GIVE 2 breaths"]
   for number, message in enumerate(messages):
+    displayInitialization()
     oneInstruction(number, message)
     displayImage()
     time.sleep(2)
-    displayInitialization()
+  displayInitialization()
   draw.text((x, top + sizeB*0), '95 < cadence < 105', font = fontBig, fill=255)
-  draw.text((x, top + sizeB*1), 'Rate depending \non victim', font = fontBig, fill=255)
+  draw.text((x, top + sizeB*1), f'{round(distJos*100,1)} < depth < {round(distSus*100,1)}', font = fontBig, fill=255)
   displayImage()
+  time.sleep(2)
 
 # Functie prezentare procedura masaj cardiac
 def prezentareProcedura():
@@ -300,50 +324,83 @@ def prezentareProcedura():
 
 # Functie oprire pe baza input audio
 def semnalStop():
-  intent = sti()
+  intent = sti2()
+  print(f"intent: {intent}")
   if intent == "finish":
-    return True
-  return False
+    return "finish"
+  elif intent == "continue":
+    return "continue"
+  return ""
 
 # Functie continuare pe baza input audio
 def continuare():
-  intent = sti()
-  if intent == "stepDone":
-    return True
-  return False
+  intent = sti2()
+  if intent == "continue":
+    return intent
+  return ""
 
 # Functie ajustare marje pe baza tipului de victima
 def ajustareMarje(tipVictima):
+  global distJos, distSus
   if tipVictima == "child":
-    distJos = 4.5
-    distSus = 5.5
+    distJos = 0.035
+    distSus = 0.045
   if tipVictima == "babyVictim":
-    distJos = 3.3
-    distSus = 4.3
+    distJos = 0.033
+    distSus = 0.043
 
 
 # Functie initializare program, input date victima
 def promptSetup(tipVictima):
   displayInitialization()
-  draw.text((x+10, top + sizeB*1), "Child or Adult victim", font = fontBig, fill=255)
-  draw.text((x+10, top + sizeB*2), f'Current: {tipVictima}', font = fontBig, fill=255)
+  draw.text((x+10, top + sizeB*1), "Child or Adult\nvictim", font = fontBig, fill=255)
+  draw.text((x+10, top + sizeB*3), f'Current: {tipVictima}', font = fontBig, fill=255)
   displayImage()
 
 def initialSetup():
   victima = ""
   promptSetup(victima)
   while victima == "":
-    smartPrint("Victim Data")
     victima = dateVictima()
+    smartPrint(f"Victim Data:{victima}")
     if victima != "":
       promptSetup(victima)
       time.sleep(0.5)
     ajustareMarje(victima) # modifica marje in functie de victima https://www.cpracademylv.com/infant-cpr-certification/
 
+def continuePrompt():
+  intent = ""
+  displayInitialization()
+  oneInstruction("","Waiting for start\ncommand")
+  displayImage()
+  while intent != "continue":
+    intent = continuare()
+  for i in range(3):
+    displayInitialization()
+    oneInstruction("",f'Starting in {3-i}')
+    displayImage()
+    time.sleep(1)
+
+def verificareStop():
+  intent = ""
+  displayInitialization()
+  oneInstruction("", "Stop or continue?")
+  displayImage()
+  while intent == "":
+   intent = semnalStop()
+  return intent
+
+
 # Apelare functii
 initialSetup()
 prezentareProcedura()
-while not semnalStop():
+stop = ""
+while stop != "finish":
+  continuePrompt()
   masterApasari()
   rasuflari()
+  startInterval = time.time()
+  stop = verificareStop()
+  print(stop)
+  time.sleep(2)
 rhino.delete() # Oprire picovoice rhino
