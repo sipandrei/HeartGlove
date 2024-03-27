@@ -107,8 +107,8 @@ acY = 0
 acZ = 0
 
 # Variabile cu informații despre apăsări
-distJos = 0.035 # apasare minima de 3 centimetri jumatate
-distSus = 0.055 # apasare maxima de 5 centimetri jumatate
+distJos = 0.045 # apasare minima de 3 centimetri jumatate
+distSus = 0.065 # apasare maxima de 5 centimetri jumatate
 durJos = 95 # cadenta minima de 95 de apasari pe minut
 durSus = 105 # cadenta maxima de 105 de apasari pe minut
 marjaAcc = 2 # diferența minimă de accelerație de 2 m/s^2 pentru considerarea mișcării -
@@ -325,8 +325,11 @@ def prezentareProcedura():
 # Functie oprire pe baza input audio
 def semnalStop():
   intent = sti2()
-  if intent == "finish" or intent == "continue":
-    return intent
+  print(f"intent: {intent}")
+  if intent == "finish":
+    return "finish"
+  elif intent == "continue":
+    return "continue"
   return ""
 
 # Functie continuare pe baza input audio
@@ -340,8 +343,8 @@ def continuare():
 def ajustareMarje(tipVictima):
   global distJos, distSus
   if tipVictima == "child":
-    distJos = 0.045
-    distSus = 0.055
+    distJos = 0.035
+    distSus = 0.045
   if tipVictima == "babyVictim":
     distJos = 0.033
     distSus = 0.043
@@ -385,12 +388,12 @@ def verificareStop():
   displayImage()
   while intent == "":
    intent = semnalStop()
+  return intent
 
 
 # Apelare functii
 initialSetup()
 prezentareProcedura()
-continuePrompt()
 stop = ""
 while stop != "finish":
   continuePrompt()
@@ -398,4 +401,6 @@ while stop != "finish":
   rasuflari()
   startInterval = time.time()
   stop = verificareStop()
+  print(stop)
+  time.sleep(2)
 rhino.delete() # Oprire picovoice rhino
