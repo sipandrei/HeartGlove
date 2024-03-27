@@ -325,7 +325,7 @@ def prezentareProcedura():
 # Functie oprire pe baza input audio
 def semnalStop():
   intent = sti2()
-  if intent == "finish":
+  if intent == "finish" or intent == "continue":
     return intent
   return ""
 
@@ -378,6 +378,14 @@ def continuePrompt():
     displayImage()
     time.sleep(1)
 
+def verificareStop():
+  intent = ""
+  displayInitialization()
+  oneInstruction("", "Stop or continue?")
+  displayImage()
+  while intent == "":
+   intent = semnalStop()
+
 
 # Apelare functii
 initialSetup()
@@ -385,9 +393,9 @@ prezentareProcedura()
 continuePrompt()
 stop = ""
 while stop != "finish":
+  continuePrompt()
   masterApasari()
   rasuflari()
   startInterval = time.time()
-  while time.time() - startInterval < 5 and stop != "finish":
-    stop = semnalStop()
+  stop = verificareStop()
 rhino.delete() # Oprire picovoice rhino
